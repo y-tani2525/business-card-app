@@ -10,14 +10,121 @@
 
 ---
 
-## 参考記事からの主な知見
+## アーキテクチャの選定
 
-| 出典 | ポイント |
-|------|----------|
-| future-architect | **Class Widget を原則必須**。Functional Widget は private 補助メソッドのみ許容 |
-| thinkit | **レイヤードアーキテクチャ**（presentation / domain / data）で関心を分離 |
-| cmatrix | 抽象クラス・インターフェース・Mixin でコード再利用性・テスト性を高める |
-| zenn (heyhey) | モデルクラスを独立させてドメイン知識をUIから切り離す |
+### 採用スタイル：Feature-First 軽量レイヤードアーキテクチャ
+
+このアプリは **クリーンアーキテクチャの考え方を部分採用した、Feature-First の軽量レイヤードアーキテクチャ** を採用している。
+
+| アーキテクチャ | 採用状況 | 理由 |
+|---------------|----------|------|
+| クリーンアーキテクチャ | 部分採用 | Presentation / Domain の分離という核心部分のみ取り入れる。Use Case 層は現時点では不要なため省略 |
+| DDD（ドメイン駆動設計） | 概念のみ採用 | `domain/models/` にエンティティを置くという考え方を借用。集約・値オブジェクト・リポジトリは将来対応 |
+| Feature-First | 採用 | 画面・機能ごとにディレクトリをまとめる Flutter コミュニティの標準構成 |
+
+### クリーンアーキテクチャとの対応関係
+
+クリーンアーキテクチャは「同心円状の層」で表現されるが、このアプリでは以下のように対応させる。
+
+```
+クリーンアーキテクチャ          このアプリ
+─────────────────────────────────────────────
+Frameworks & Drivers      →  Flutter / Web（フレームワーク自体）
+Interface Adapters        →  presentation/pages/, presentation/widgets/
+Use Cases                 →  （現時点では省略。ロジックが増えたら追加）
+Entities                  →  domain/models/
+```
+
+> **なぜ Use Case 層を省略するか**
+> 名刺の表示のみで外部 API や複雑なビジネスロジックがない現段階では、
+> Use Case を挟むと薄いクラスが増えて可読性が下がるため省略する。
+> データ取得・保存が発生した時点で追加する。
+
+---
+
+## 依存関係
+
+### 依存の方向
+
+依存は **外側 → 内側（Presentation → Domain）** の一方向のみ。  
+内側（Domain）は外側を一切知らない。
+
+```
+main.dart
+    │
+    ▼
+app.dart
+    │
+    ▼
+presentation/pages/          presentation/widgets/
+    │                               │
+    └───────────┬───────────────────┘
+                ▼
+         domain/models/
+         （誰にも依存しない）
+```
+
+### 各層が依存してよいもの・してはいけないもの
+
+| 層 | 依存してよいもの | 依存してはいけないもの |
+|----|----------------|----------------------|
+| `main.dart` | `app.dart` のみ | presentation / domain / Flutter Widget |
+| `app.dart` | `presentation/pages/`・Flutter | `domain/` を直接触らない |
+| `presentation/` | `domain/models/`・Flutter Widget | 外部 API・DB・他 feature の presentation |
+| `domain/models/` | Dart の標準ライブラリのみ | Flutter・外部パッケージ・他の層 |
+
+### 具体的な import の例
+
+```dart
+// ✅ presentation が domain/models を参照するのは OK
+import 'package:business_card_app/features/business_card/domain/models/business_card.dart';
+
+// ❌ domain が presentation を参照するのは禁止
+import 'package:business_card_app/features/business_card/presentation/pages/home_page.dart';
+
+// ❌ presentation が別 feature の presentation を直接参照するのは禁止
+import 'package:business_card_app/features/other_feature/presentation/...';
+```
+
+---
+
+## レイヤー詳細
+
+### Presentation 層（`presentation/`）
+
+UI の構築とユーザー操作の受け口。Flutter Widget のみで構成する。
+
+| ディレクトリ | 役割 |
+|------------|------|
+| `pages/` | 画面単位の Widget。Navigator でルーティングされる単位 |
+| `widgets/` | pages 内で使う再利用可能な部品。1ファイル1クラスを原則とする |
+
+- ビジネスロジックを書かない。データの加工・判定は domain に委ねる
+- `domain/models/` のデータを受け取って表示するだけに徹する
+
+### Domain 層（`domain/`）
+
+アプリの中核。Flutter にも外部サービスにも依存しない純粋な Dart クラスで構成する。
+
+| ディレクトリ | 役割 |
+|------------|------|
+| `models/` | エンティティ（名刺データ等）の定義 |
+| `repositories/`（将来） | データ取得の抽象インターフェース定義 |
+| `usecases/`（将来） | ビジネスロジックのユニット |
+
+- Flutter を import しない
+- `const` コンストラクタを使い immutable（不変）に設計する
+
+### Data 層（将来追加）
+
+外部 API・ローカル DB との通信を担う。Domain の Repository インターフェースを実装する。
+
+```
+domain/repositories/business_card_repository.dart  ← 抽象（interface）
+data/repositories/business_card_repository_impl.dart ← 実装
+```
+
+Presentation は抽象にだけ依存するため、実装を差し替えてもUIは変わらない。
 
 ---
 
@@ -39,14 +146,16 @@ lib/
 │   └── business_card/
 │       ├── presentation/
 │       │   ├── pages/
-│       │   │   └── home_page.dart     # MyHomePage（画面単位）
+│       │   │   └── home_page.dart          # MyHomePage（画面単位）
 │       │   └── widgets/
-│       │       ├── business_card_view.dart   # 名刺全体の表示 Widget
-│       │       ├── card_name_section.dart    # 氏名・肩書き部分
+│       │       ├── business_card_view.dart  # 名刺全体の表示 Widget
+│       │       ├── card_name_section.dart   # 氏名・肩書き部分
 │       │       └── card_contact_section.dart # 連絡先部分
-│       └── domain/
-│           └── models/
-│               └── business_card.dart # BusinessCard モデル（氏名・会社等）
+│       ├── domain/
+│       │   ├── models/
+│       │   │   └── business_card.dart       # BusinessCard エンティティ
+│       │   └── repositories/               # （将来）抽象インターフェース
+│       └── data/                           # （将来）Repository 実装
 └── core/
     ├── theme/
     │   └── app_theme.dart             # MaterialTheme 定義
@@ -69,6 +178,8 @@ lib/
             └── models/
                 └── business_card.dart # BusinessCard モデル（name / company / title / email / phone）
 ```
+
+---
 
 ## 各ファイルの責務
 
@@ -105,23 +216,9 @@ Widget buildCard() { ... }
 
 ---
 
-## レイヤードアーキテクチャ
-
-「関心の分離」を軸に、以下の4層で責務を分割する。
-
-| 層 | 責務 |
-|----|------|
-| **Presentation** | UI 構築とユーザー対話 |
-| **Domain** | ビジネスロジックとエンティティ定義 |
-| **Data** | 外部データソースとの通信（将来用） |
-| **State** | アプリケーション状態の保持（将来用） |
-
-依存方向は **上位層 → 下位層** のみ。下位層は上位層を知らない。
-
----
-
 ## OOP 設計原則
 
 - **単一責任原則** — 各クラスは特定の「関心事」に集中する
 - **依存性の逆転** — 抽象インターフェースに依存し、実装を分離する（Repository パターン）
 - **抽象クラス / Mixin** — 共通処理を抽象クラスで定義し、Mixin で機能を再利用する
+- **Immutability** — `domain/models/` のクラスは `const` コンストラクタ + `final` フィールドで不変にする

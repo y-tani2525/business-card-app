@@ -19,11 +19,11 @@ class BusinessCardView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvator(
+            const CircleAvatar(
               radius: 48,
               backgroundImage: AssetImage('assets/boy25.png'),
             ),
-            SizeBox(height: 16),
+            const SizedBox(height: 16),
             Text(card.name, style: textTheme.headlineMedium),
             const SizedBox(height: 4),
             Text(card.title, style: textTheme.titleMedium),

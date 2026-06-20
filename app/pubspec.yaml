@@ -12,8 +12,6 @@ dependencies:
   flutter:
     sdk: flutter #Flutter SDK本体
   cupertino_icons: ^1.0.8 # iOSスタイルのアイコンパッケージ
-  assets:
-    - assets/
 
 dev_dependencies:
   flutter_test:
@@ -22,3 +20,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/

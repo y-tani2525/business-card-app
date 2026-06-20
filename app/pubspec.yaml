@@ -1,19 +1,24 @@
-name: business_card_app
+# アプリ名・バージョン・依存パッケージの管理
+# パッケージの追加は"flitter pub add <パッケージ名>"コマンドでpubspec.ymlへの追記とflutter pub getの実行を一度に行う
+
+name: business_card_app # アプリ名
 description: A Flutter business card app.
-version: 1.0.0+1
+version: 1.0.0+1 #バージョン番号
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
-    sdk: flutter
-  cupertino_icons: ^1.0.8
+    sdk: flutter #Flutter SDK本体
+  cupertino_icons: ^1.0.8 # iOSスタイルのアイコンパッケージ
 
 dev_dependencies:
   flutter_test:
-    sdk: flutter
-  flutter_lints: ^4.0.0
+    sdk: flutter # テスト用パッケージ
+  flutter_lints: ^4.0.0 #コードの品質チェックツール
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/

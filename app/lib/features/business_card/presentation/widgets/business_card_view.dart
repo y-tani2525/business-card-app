@@ -7,6 +7,7 @@ class BusinessCardView extends StatelessWidget {
   final BusinessCard card;
 
   @override
+  // 各Widgetのbuild()メソッドが子Widgetのツリーを戻り値で返す
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
@@ -14,10 +15,15 @@ class BusinessCardView extends StatelessWidget {
       elevation: 4,
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
+        child: Column(// 縦方向に並べる
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            CircleAvator(
+              radius: 48,
+              backgroundImage: AssetImage('assets/boy25.png'),
+            ),
+            SizeBox(height: 16),
             Text(card.name, style: textTheme.headlineMedium),
             const SizedBox(height: 4),
             Text(card.title, style: textTheme.titleMedium),

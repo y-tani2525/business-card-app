@@ -20,4 +20,4 @@ echo " http://localhost:8080"
 echo "======================================"
 echo ""
 
-flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080 --profile
+flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080 --profile --no-tree-shake-icons
